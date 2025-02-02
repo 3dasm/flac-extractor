@@ -6,6 +6,7 @@ restore_mode=false
 for arg in "$@"; do
     if [ "$arg" = "--restore" ]; then
         restore_mode=true
+        echo "- RESTORE MODE: This script will restore the original flac file stored in the /orig folder"
     fi
 done
 
@@ -22,7 +23,7 @@ find . -type d -print0 | while IFS= read -r -d '' dir; do
     if [ "$restore_mode" = true ] && [ -d "orig" ]; then
         shopt -s nullglob
         for file in orig/*.flac; do
-            echo "Moving restored file: $file"
+            echo "- RESTORE MODE: Restored and processing again the original file: $file"
             mv "$file" .
         done
         shopt -u nullglob
@@ -31,7 +32,7 @@ find . -type d -print0 | while IFS= read -r -d '' dir; do
     mapfile -t -d '' cue_files < <(find . -maxdepth 1 -type f -iname "*.cue" -print0 2>/dev/null)
 
     for current_cue in "${cue_files[@]}"; do
-        cue_filename_base=$(basename -- "$current_cue" | sed 's/\.cue$//')
+        cue_filename_base=$(basename -- "$current_cue" | sed 's/\.cue$//' | sed 's/[][!.*?^$(){}+|]/\\&/g')
 
         mapfile -t -d '' flac_files < <(find . -maxdepth 1 -type f -iname "$cue_filename_base.flac" -print0 2>/dev/null)
         current_flac="${flac_files[0]}"
@@ -41,7 +42,6 @@ find . -type d -print0 | while IFS= read -r -d '' dir; do
             continue
         fi
 
-        echo "[$cue_filename_base] Processing..."
 
         # If restore mode is enabled, add "-O always" to force overwriting.
         if [ "$restore_mode" = true ]; then
@@ -50,7 +50,8 @@ find . -type d -print0 | while IFS= read -r -d '' dir; do
             overwrite_opt=""
         fi
 
-        shnsplit -f "$current_cue" $overwrite_opt -t "$cue_filename_base - %t" -o "flac flac -s -o %f -" "$current_flac"
+        echo "[$cue_filename_base] Extracting..."
+        shnsplit -f "$current_cue" $overwrite_opt -t "$cue_filename_base - %t" -o "flac flac -s -o %f -" "$current_flac" 1>/dev/null
 
         if [ $? -eq 0 ]; then
             echo "[$cue_filename_base] Storing away original FLAC..."
@@ -58,12 +59,13 @@ find . -type d -print0 | while IFS= read -r -d '' dir; do
             mv "$current_flac" orig
 
             echo "[$cue_filename_base] Tagging split files..."
-            find . -maxdepth 1 -type f -iname "*.flac" -print0 | xargs -0 cuetag "$current_cue" "$cue_filename_base*.flac"
+            cuetag "$current_cue" "$cue_filename_base*.flac"
 
-            echo "[$cue_filename_base] Done."
+            echo "[$cue_filename_base] Done!"
         else
             echo "[$cue_filename_base] ERR: shnsplit failed! Skipping..." >&2
         fi
+
     done
 
     cd - >/dev/null || exit
