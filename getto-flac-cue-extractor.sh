@@ -53,7 +53,7 @@ process_directory() {
         local cue_filename_base
         cue_filename_base=$(basename -- "$current_cue" | sed 's/\.cue$//I')
         local escaped_base
-        escaped_base=$(printf '%s' "$cue_filename_base" | sed 's/[][!.*?^$(){}+| ]/\\&/g')
+        escaped_base=$(printf '%s' "$cue_filename_base" | sed 's/[][!.*?^$(){}+| /]/\\&/g')
 
         # Find the matching FLAC file (using the escaped base name).
         local flac_files=()
