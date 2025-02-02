@@ -6,69 +6,70 @@ restore_mode=false
 for arg in "$@"; do
     if [ "$arg" = "--restore" ]; then
         restore_mode=true
+        echo "==============================="
         echo "- RESTORE MODE: This script will restore the original flac file stored in the /orig folder"
+        echo "==============================="
     fi
 done
 
 find . -type d -print0 | while IFS= read -r -d '' dir; do
+
+    if [ "$(basename "$dir")" = "orig" ]; then
+        if [ "$restore_mode" = true ]; then
+            shopt -s nocaseglob
+            for file in "$dir"/*.flac; do
+                echo "- RESTORE MODE: Restoring..."
+                mv "$file" "$dir/../"
+            done
+            shopt -u nocaseglob
+            rmdir "$dir" 2>/dev/null || echo "- WARNING: '$dir' is not empty or could not be removed."
+        fi
+    fi
+
     echo "- Scanning: $dir"
 
-    if ! cd "$dir"; then
-        echo "ERR: Failed to enter directory '$dir'. Skipping..." >&2
-        continue
-    fi
-
-    # In restore mode, if an 'orig' folder exists and contains FLAC files,
-    # move them back to the parent folder.
-    if [ "$restore_mode" = true ] && [ -d "orig" ]; then
-        shopt -s nullglob
-        for file in orig/*.flac; do
-            echo "- RESTORE MODE: Restored and processing again the original file: $file"
-            mv "$file" .
-        done
-        shopt -u nullglob
-    fi
-
-    mapfile -t -d '' cue_files < <(find . -maxdepth 1 -type f -iname "*.cue" -print0 2>/dev/null)
+    mapfile -t -d '' cue_files < <(find "$dir" -maxdepth 1 -type f -iname "*.cue" -print0 2>/dev/null)
 
     for current_cue in "${cue_files[@]}"; do
-        cue_filename_base=$(basename -- "$current_cue" | sed 's/\.cue$//' | sed 's/[][!.*?^$(){}+|]/\\&/g')
+        echo "==============================="
 
-        mapfile -t -d '' flac_files < <(find . -maxdepth 1 -type f -iname "$cue_filename_base.flac" -print0 2>/dev/null)
+        cue_filename_base=$(basename -- "$current_cue" | sed 's/\.cue$//I')
+        escaped_base=$(printf '%s' "$cue_filename_base" | sed 's/[][?*]/\\&/g')
+    
+        mapfile -t -d '' flac_files < <(find "$dir" -maxdepth 1 -type f -iname "$escaped_base".flac -print0 2>/dev/null)
         current_flac="${flac_files[0]}"
 
         if [ -z "$current_flac" ]; then
-            echo "ERR: No matching FLAC for '$cue_filename_base.cue'" >&2
+            echo " - WRN: No matching FLAC for ($current_cue)" >&2
+            echo "==============================="
             continue
         fi
 
-
-        # If restore mode is enabled, add "-O always" to force overwriting.
-        if [ "$restore_mode" = true ]; then
-            overwrite_opt="-O always"
+        if [ -d "$dir/$cue_filename_base" ]; then
+            if [ "$restore_mode" = false ]; then
+                echo " - WRN: Album already extracted: $cue_filename_base"
+                echo "==============================="
+                continue
+            fi
         else
-            overwrite_opt=""
+            mkdir -p "$dir/$cue_filename_base" || { echo " - ERR: Failed to create sub-dir for extracted files." >&2; continue; }
         fi
 
-        echo "[$cue_filename_base] Extracting..."
-        shnsplit -f "$current_cue" $overwrite_opt -t "$cue_filename_base - %t" -o "flac flac -s -o %f -" "$current_flac" 1>/dev/null
+        echo " - Extracting: $cue_filename_base"
+        shnsplit -q -O always -f "$current_cue" -d "$dir/$cue_filename_base" -t "%n - %a - %t" -o "flac flac -s -o %f -" "$current_flac" #1>/dev/null
 
         if [ $? -eq 0 ]; then
-            echo "[$cue_filename_base] Storing away original FLAC..."
-            mkdir orig
-            mv "$current_flac" orig
-
-            echo "[$cue_filename_base] Tagging split files..."
-            cuetag "$current_cue" "$cue_filename_base*.flac"
-
-            echo "[$cue_filename_base] Done!"
+            echo " - Tagging split files..."
+            cuetag "$current_cue" "$dir/$cue_filename_base"/*.flac
+            echo " - Done!"
         else
-            echo "[$cue_filename_base] ERR: shnsplit failed! Skipping..." >&2
+            echo " - ERR: shnsplit failed! Skipping..." >&2
         fi
+        
+        echo "==============================="
 
     done
 
-    cd - >/dev/null || exit
 done
 
-echo "- All processing completed!"
+echo "- Exiting!"
