@@ -4,13 +4,17 @@ IFS=$'\n\t'
 
 echo "[getto flac/cue extractor]"
 
-restore_mode=false
+force_mode=false
+folder="."
+
 for arg in "$@"; do
-    if [ "$arg" = "--restore" ]; then
-        restore_mode=true
+    if [ "$arg" = "--force" ]; then
+        force_mode=true
         echo "==============================="
-        echo "- RESTORE MODE: This script will restore the original FLAC files stored in the /orig folder"
+        echo "- FORCE MODE"
         echo "==============================="
+    else
+        folder="$arg"
     fi
 done
 
@@ -21,22 +25,6 @@ process_directory() {
 
     # Skip directories with these names.
     if [[ "$base" =~ ^(Cover|Covers|Scans|scans)$ ]]; then
-        return
-    fi
-
-    # If this directory is named "orig", restore its FLAC files if in restore mode.
-    if [ "$base" = "orig" ]; then
-        if [ "$restore_mode" = true ]; then
-            shopt -s nocaseglob
-            for file in "$dir"/*.flac; do
-                # Only process if the file exists.
-                [ -e "$file" ] || continue
-                echo "- RESTORE MODE: Restoring $file..."
-                mv -f "$file" "$dir/../"
-            done
-            shopt -u nocaseglob
-            rmdir "$dir" 2>/dev/null || echo "- WARNING: '$dir' is not empty or could not be removed."
-        fi
         return
     fi
 
@@ -68,7 +56,7 @@ process_directory() {
 
         # Check if the extraction directory exists.
         if [ -d "$dir/$cue_filename_base" ]; then
-            if [ "$restore_mode" = false ]; then
+            if [ "$force_mode" = false ]; then
                 echo "- WRN: Album already extracted: $cue_filename_base"
                 echo "==============================="
                 continue
@@ -86,6 +74,8 @@ process_directory() {
             -t "%n - %a - %t" -o "flac flac -s -o %f -" "$current_flac"; then
             echo "- Tagging split files..."
             cuetag "$current_cue" "$dir/$cue_filename_base"/*.flac
+            echo "- Removing original flac"
+            rm "$current_flac"
             echo "- Done!"
         else
             echo "- ERR: shnsplit failed! Skipping..." >&2
@@ -97,7 +87,7 @@ process_directory() {
 }
 
 # Iterate over all directories, processing each one.
-find . -type d -print0 | while IFS= read -r -d '' dir; do
+find "$folder" -type d -print0 | while IFS= read -r -d '' dir; do
     process_directory "$dir"
 done
 
