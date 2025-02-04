@@ -89,6 +89,11 @@ Here is an example of how the script output might look during execution:
 - Exiting!
 ```
 
+## Example using qbittorrent
+
+![image](https://github.com/user-attachments/assets/602686eb-3913-4242-bea8-08640d877205)
+
+
 ## Contributing
 
 Contributions are welcome! Feel free to open an issue or submit a pull request.
