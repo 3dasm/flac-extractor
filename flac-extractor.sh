@@ -2,7 +2,29 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-echo "[flac extractor]"
+echo "[flac extractor v0.2]"
+
+show_help() {
+    echo "Usage: $0 [--force] [--cat <category>] [--importFolder <path>] <folder>"
+    echo ""
+    echo "Options:"
+    echo "  --force                Force extraction even if the album already exists."
+    echo "  --cat <category>       Specify the category (currently supports 'lidarr')."
+    echo "  --importFolder <path>  Specify the path to move completed downloads into."
+    echo ""
+    echo "Description:"
+    echo "This script processes FLAC files using cue sheets. It extracts tracks from FLAC files, tags them, and moves them into a new directory based on the cue sheet name."
+    echo "If the category is 'lidarr' and an import folder is specified, the processed directory will be moved into the import folder."
+    echo ""
+    echo "More info: https://github.com/3dasm/flac-extractor"
+}
+
+for arg in "$@"; do
+    if [ "$arg" = "--help" ]; then
+        show_help
+        exit 0
+    fi
+done
 
 for arg in "$@"; do
     if [ "$arg" = "--help" ]; then
