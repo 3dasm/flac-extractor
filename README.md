@@ -1,52 +1,98 @@
-# **Getto FLAC/CUE Extractor 🎵**
+# FLAC Extractor Script
 
-I create this script after realizing I was downloading tons of FLAC albumns that were not splitted, some are, most, but a huge percentage out there are in the bundled format with the respective CUE file.
+**FLAC Extractor** is a bash script designed to process FLAC audio files using cue sheets. It extracts tracks from FLAC files, tags them with metadata, and organizes the extracted files into new directories based on the cue sheet names.
 
-A **Bash script** for extracting and splitting **FLAC** audio files using **CUE sheets**.  
-It automates the process of **splitting**, **tagging**, and **storing** the original FLAC files.
+## Features
 
-## **Features**
+- **Track Extraction:** Automatically extract tracks from FLAC files using `shnsplit`.
+- **Metadata Tagging:** Tag each split file with metadata from the associated `.cue` file.
+- **Force Mode:** Force extraction even if an album directory already exists.
+- **Lidarr Support:** Optionally move processed directories into a specified library folder when running with the "lidarr" category.
 
-✅ **Scans directories** for matching `.cue` and `.flac` files  
-✅ **Handles case-insensitive filenames** (`.CUE` / `.FLAC`)  
-✅ **Splits FLAC files** into individual tracks using `shnsplit`  
-✅ **Tags the split tracks** with metadata from the `.cue` file  
-✅ **Moves original FLAC files** to an `orig/` folder for backup  
-✅ **Handles filenames with spaces & special characters** safely
+## Dependencies
 
-## **Requirements**
+Before using this script, ensure you have the following dependencies installed:
 
-Make sure the following dependencies are installed:
+1. **shnsplit:** A tool to split FLAC files based on cue sheets. You can install it using your package manager or build from source.
 
-- `shntool`
-- `cuetools`
-- `flac`
-- `awk`, `sed`, and `find` (default in most Unix systems)
+   ```sh
+   sudo apt-get install shntool # Debian/Ubuntu
+   brew install shntool         # macOS
+   ```
 
-## **Usage**
+2. **cuetag:** A tool for tagging audio files with metadata from `.cue` files. You can install it similarly:
+   ```sh
+   sudo apt-get install cuetools flac-utils  # Debian/Ubuntu
+   brew install cuetools                   # macOS
+   ```
 
-```bash
-chmod +x getto-flac-cue-extractor.sh
-./getto-flac-cue-extractor.sh
+## Installation
+
+1. Clone this repository to your local machine.
+
+   ```sh
+   git clone https://github.com/3dasm/flac-extractor.git
+   cd flac-extractor
+   ```
+
+2. Make the script executable.
+   ```sh
+   chmod +x flac-extractor.sh
+   ```
+
+## Usage
+
+Run the script by specifying the folder containing FLAC files and optionally adding options:
+
+```sh
+./flac-extractor.sh [options] <folder>
 ```
 
-The script will scan **all directories** recursively and process `.cue` files.  
-**Extracted tracks** will be saved in the same directory as the original FLAC.
+### Options
 
-## **Example Output**
+- `--force`: Force extraction even if an album directory already exists.
+- `--cat <category>`: Specify the category (currently supports "lidarr").
+- `--importFolder <path>`: Specify the path to move completed downloads into.
 
+### Examples
+
+1. **Basic Extraction:**
+
+   ```sh
+   ./flac-extractor.sh /path/to/flac/files
+   ```
+
+2. **Force Extraction:**
+
+   ```sh
+   ./flac-extractor.sh --force /path/to/flac/files
+   ```
+
+3. **Extract and Move for Lidarr:**
+   ```sh
+   ./flac-extractor.sh --cat lidarr --importFolder /path/to/lidarr/library /path/to/flac/files
+   ```
+
+## Sample Output
+
+Here is an example of how the script output might look during execution:
+
+```sh
+[flac extractor]
+- Scanning: /path/to/flac/files/ExampleAlbum
+===============================
+- Extracting: ExampleAlbum
+- Tagging split files...
+- Removing original flac
+- Done!
+===============================
+- Exiting!
 ```
-[getto flac/cue extractor]
-- Scanning: /music/album/
-[Album] Processing...
-[Album] Storing away original FLAC...
-[Album] Tagging split files...
-[Album] Done.
-- All processing completed!
-```
 
-## **License**
+## Contributing
 
-📜 MIT License – Feel free to modify and share!
+Contributions are welcome! Feel free to open an issue or submit a pull request.
 
----
+## License
+
+This script is licensed under the MIT License.
