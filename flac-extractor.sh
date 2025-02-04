@@ -19,53 +19,37 @@ show_help() {
     echo "More info: https://github.com/3dasm/flac-extractor"
 }
 
-for arg in "$@"; do
-    if [ "$arg" = "--help" ]; then
-        show_help
-        exit 0
-    fi
-done
-
-for arg in "$@"; do
-    if [ "$arg" = "--help" ]; then
-        help
-        exit 0
-    fi
-done
-
-help() {
-    echo "Usage: $0 [--force] [--cat <category>] [--importFolder <path>] <folder>"
-    echo ""
-    echo "Options:"
-    echo "  --force                Force extraction even if the album already exists."
-    echo "  --cat <category>       Specify the category (currently supports 'lidarr')."
-    echo "  --importFolder <path>  Specify the path to move completed downloads into."
-    echo ""
-    echo "Description:"
-    echo "This script processes FLAC files using cue sheets. It extracts tracks from FLAC files, tags them, and moves them into a new directory based on the cue sheet name."
-    echo "If the category is 'lidarr' and an import folder is specified, the processed directory will be moved into the import folder."
-}
-
 force_mode=false
 folder="."
 category=""
 importFolder=""
 
-for arg in "$@"; do
-    if [ "$arg" = "--force" ]; then
-        force_mode=true
-        echo "==============================="
-        echo "- FORCE MODE"
-        echo "==============================="
-    elif [ "$arg" = "--cat" ]; then
-        category="$2"
-        shift 2
-    elif [ "$arg" = "--importFolder" ]; then
-        importFolder="$2"
-        shift 2
-    else
-        folder="$arg"
-    fi
+for ((i=1; i<=$#; i++)); do
+    arg="${!i}"
+    case $arg in
+        --help)
+            show_help
+            exit 0
+            ;;
+        --force)
+            force_mode=true
+            echo "==============================="
+            echo "- FORCE MODE"
+            echo "==============================="
+            ;;
+        --cat)
+            category="${!((i+1))}"
+            ((i++))
+            ;;
+        --importFolder)
+            importFolder="${!((i+1))}"
+            ((i++))
+            ;;
+        *)
+            folder=$arg
+            break
+            ;;
+    esac
 done
 
 process_directory() {
@@ -136,7 +120,6 @@ process_directory() {
     done
 }
 
-# Iterate over all directories, processing each one.
 find "$folder" -type d -print0 | while IFS= read -r -d '' dir; do
     process_directory "$dir"
 done
