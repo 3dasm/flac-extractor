@@ -91,7 +91,7 @@ Here is an example of how the script output might look during execution:
 
 ## Example using qbittorrent
 
-![image](https://github.com/user-attachments/assets/602686eb-3913-4242-bea8-08640d877205)
+![image](https://github.com/user-attachments/assets/4bc4d1d6-7be0-4cb6-9645-e2750bc3a81f)
 
 
 ## Contributing
