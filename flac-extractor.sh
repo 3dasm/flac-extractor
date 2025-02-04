@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 IFS=$'\n\t'
+[ "${DEBUG:-}" == 'true' ] && set -x
 
 echo "[flac extractor v0.2]"
 
@@ -24,31 +25,37 @@ folder="."
 category=""
 importFolder=""
 
-for ((i=1; i<=$#; i++)); do
-    arg="${!i}"
-    case $arg in
-        --help)
-            show_help
-            exit 0
-            ;;
-        --force)
-            force_mode=true
-            echo "==============================="
-            echo "- FORCE MODE"
-            echo "==============================="
-            ;;
-        --cat)
-            category="${!((i+1))}"
-            ((i++))
-            ;;
-        --importFolder)
-            importFolder="${!((i+1))}"
-            ((i++))
-            ;;
-        *)
-            folder=$arg
-            break
-            ;;
+while [[ $# -gt 0 ]]; do
+    case $1 in
+    -h | --help)
+        show_help
+        exit 0
+        ;;
+    -f | --force)
+        force_mode=true
+        echo "==============================="
+        echo "- FORCE MODE"
+        echo "==============================="
+        shift
+        ;;
+    -c | --cat)
+        category="${2}"
+        shift
+        shift
+        ;;
+    -if | --importFolder)
+        importFolder="${2}"
+        shift
+        shift
+        ;;
+    -* | --*)
+        echo "Unknown option $1"
+        exit 1
+        ;;
+    *)
+        folder=$1
+        shift
+        ;;
     esac
 done
 
