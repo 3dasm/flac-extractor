@@ -4,8 +4,30 @@ IFS=$'\n\t'
 
 echo "[flac extractor]"
 
+for arg in "$@"; do
+    if [ "$arg" = "--help" ]; then
+        help
+        exit 0
+    fi
+done
+
+help() {
+    echo "Usage: $0 [--force] [--cat <category>] [--importFolder <path>] <folder>"
+    echo ""
+    echo "Options:"
+    echo "  --force                Force extraction even if the album already exists."
+    echo "  --cat <category>       Specify the category (currently supports 'lidarr')."
+    echo "  --importFolder <path>  Specify the path to move completed downloads into."
+    echo ""
+    echo "Description:"
+    echo "This script processes FLAC files using cue sheets. It extracts tracks from FLAC files, tags them, and moves them into a new directory based on the cue sheet name."
+    echo "If the category is 'lidarr' and an import folder is specified, the processed directory will be moved into the import folder."
+}
+
 force_mode=false
 folder="."
+category=""
+importFolder=""
 
 for arg in "$@"; do
     if [ "$arg" = "--force" ]; then
@@ -13,6 +35,12 @@ for arg in "$@"; do
         echo "==============================="
         echo "- FORCE MODE"
         echo "==============================="
+    elif [ "$arg" = "--cat" ]; then
+        category="$2"
+        shift 2
+    elif [ "$arg" = "--importFolder" ]; then
+        importFolder="$2"
+        shift 2
     else
         folder="$arg"
     fi
@@ -90,5 +118,15 @@ process_directory() {
 find "$folder" -type d -print0 | while IFS= read -r -d '' dir; do
     process_directory "$dir"
 done
+
+if [ "$category" = "lidarr" ]; then
+    if [ -n "$importFolder" ] && [ -d "$importFolder" ]; then
+        echo "- Moving lidarr completed download into $importFolder..."
+        mv "$folder" "$importFolder"
+        echo "- Moved successfully!"
+    else
+        echo "- ERR: Import folder not specified or does not exist." >&2
+    fi
+fi
 
 echo "- Exiting!"
