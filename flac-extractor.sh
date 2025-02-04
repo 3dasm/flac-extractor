@@ -2,7 +2,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-echo "[getto flac/cue extractor]"
+echo "[flac extractor]"
 
 force_mode=false
 folder="."
